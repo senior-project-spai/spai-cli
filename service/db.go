@@ -10,6 +10,19 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+// Image is a model for sql image result
+type Image struct {
+	ID        string
+	Path      string
+	Timestamp struct {
+		Image           int64
+		Age             sql.NullInt64
+		Gender          sql.NullInt64
+		Emotion         sql.NullInt64
+		FaceRecognition sql.NullInt64
+	}
+}
+
 var db *sql.DB
 
 func init() {
@@ -65,4 +78,26 @@ func RemoveImageFromDB(imageID string) error {
 	}
 
 	return nil
+}
+
+func ListImages() ([]Image, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	rows, err := db.QueryContext(ctx, "SELECT id, path, timestamp, age_timestamp, emotion_timestamp, gender_timestamp, face_recognition_timestamp FROM image ORDER BY timestamp DESC;")
+	if err != nil {
+		return nil, fmt.Errorf("ListImage: %w", err)
+	}
+	defer rows.Close()
+
+	images := make([]Image, 0)
+	for rows.Next() {
+		var image Image
+		if err := rows.Scan(&image.ID, &image.Path, &image.Timestamp.Image, &image.Timestamp.Age, &image.Timestamp.Emotion, &image.Timestamp.Gender, &image.Timestamp.FaceRecognition); err != nil {
+			return nil, fmt.Errorf("ListImage: %w", err)
+		}
+		images = append(images, image)
+	}
+
+	return images, nil
 }
