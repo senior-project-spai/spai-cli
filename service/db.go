@@ -4,10 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"time"
 
 	// MySQL driver
 	_ "github.com/go-sql-driver/mysql"
+	// Auto load from .env
+	_ "github.com/joho/godotenv/autoload"
 )
 
 // Image is a model for sql image result
@@ -26,7 +29,14 @@ type Image struct {
 var db *sql.DB
 
 func init() {
-	db = mustInitDB("root:NxD5GEARjP@tcp(mysql.spai.svc)/face_recognition")
+	// Load config from environment variables
+	dataSourceName, isDataSourceNamePresent := os.LookupEnv("DATA_SOURCE_NAME")
+	if !isDataSourceNamePresent {
+		panic(fmt.Errorf("DATA_SOURCE_NAME is not provided in environment"))
+	}
+
+	// Initialize database connection
+	db = mustInitDB(dataSourceName)
 }
 
 func mustInitDB(dsn string) *sql.DB {
@@ -80,6 +90,7 @@ func RemoveImageFromDB(imageID string) error {
 	return nil
 }
 
+// ListImages list images in SPAI
 func ListImages(limit uint) ([]Image, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
