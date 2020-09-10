@@ -80,11 +80,17 @@ func RemoveImageFromDB(imageID string) error {
 	return nil
 }
 
-func ListImages() ([]Image, error) {
+func ListImages(limit uint) ([]Image, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	rows, err := db.QueryContext(ctx, "SELECT id, path, timestamp, age_timestamp, emotion_timestamp, gender_timestamp, face_recognition_timestamp FROM image ORDER BY timestamp DESC;")
+	// Set limit
+	query := fmt.Sprintf("SELECT id, path, timestamp, age_timestamp, emotion_timestamp, gender_timestamp, face_recognition_timestamp FROM image ORDER BY timestamp DESC LIMIT %d;", limit)
+	if limit == 0 {
+		query = "SELECT id, path, timestamp, age_timestamp, emotion_timestamp, gender_timestamp, face_recognition_timestamp FROM image ORDER BY timestamp DESC;"
+	}
+
+	rows, err := db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("ListImage: %w", err)
 	}
