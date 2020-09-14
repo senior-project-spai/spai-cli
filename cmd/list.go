@@ -25,12 +25,29 @@ var listCmd = &cobra.Command{
 		}
 
 		for _, image := range images {
-			isDone := image.Timestamp.Age.Valid && image.Timestamp.Gender.Valid && image.Timestamp.Emotion.Valid && image.Timestamp.FaceRecognition.Valid
+
 			imageTime := time.Unix(0, image.Timestamp.Image*1000000)
-			fmt.Printf("ID: %s, Time: %v, Done: %v\n", image.ID, imageTime, isDone)
+			fmt.Printf("ID: %s, Time: %v", image.ID, imageTime)
+
+			// Print complete time if all result have timestamp
+			if isDone := image.Timestamp.Age.Valid && image.Timestamp.Gender.Valid && image.Timestamp.Emotion.Valid && image.Timestamp.FaceRecognition.Valid; isDone {
+				fmt.Printf(", Done Time: %v\n", time.Unix(0, findMax([]int64{image.Timestamp.Age.Int64, image.Timestamp.Gender.Int64, image.Timestamp.Emotion.Int64, image.Timestamp.FaceRecognition.Int64})*1000000))
+			} else {
+				fmt.Println()
+			}
 		}
 		return nil
 	},
+}
+
+func findMax(a []int64) (max int64) {
+	max = a[0]
+	for _, value := range a {
+		if value > max {
+			max = value
+		}
+	}
+	return max
 }
 
 func init() {

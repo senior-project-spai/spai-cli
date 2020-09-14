@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -117,4 +118,23 @@ func ListImages(limit uint) ([]Image, error) {
 	}
 
 	return images, nil
+}
+
+// GetImage returned an image data in DB
+func GetImage(imageID string) (Image, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	image := Image{}
+	row := db.QueryRowContext(ctx, "SELECT id, path, timestamp, age_timestamp, emotion_timestamp, gender_timestamp, face_recognition_timestamp FROM image WHERE id = ?;", imageID)
+	if err := row.Scan(&image.ID, &image.Path, &image.Timestamp.Image, &image.Timestamp.Age, &image.Timestamp.Emotion, &image.Timestamp.Gender, &image.Timestamp.FaceRecognition); err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return Image{}, fmt.Errorf("GetImage: %w", err)
+		default:
+			panic(err)
+		}
+	}
+
+	return image, nil
 }
